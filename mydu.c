@@ -1,26 +1,37 @@
-//Jesse McCarville-Schueths
-//CS 4760
+//AUTHOR: Jesse McCarville-Schueths
+//COURSE: CS 4760
+//DATE: SEPT 7 2020
+//FILENAME: mydu.c
+//
+//DESCRIPTION:
+//
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
-
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <grp.h>
+#include <pwd.h>
+#include <errno.h>
 
 
 #define MAX_ARGS 10
-//#include <unistd.h>
 
 
 //======== PROTOTYPES =========
-int depthfirstapply(char *path, int pathfun(char *path)),char *opts);
+int depthfirstapply(char *path, int pathfun(char *path),char *opts);
 int sizepathfun(char *path);
-char
+char *get_dir(char *dir);
 
 //=========== MAIN ============
 
 int main(int argc, char **argv){
 	int options;
+	char selected_directory[4096];
 	char selected_options[MAX_ARGS];
 	while((options = getopt(argc, argv, "haB:bmcd:HLs")) != -1){
 		switch(options){
@@ -69,15 +80,18 @@ int main(int argc, char **argv){
 				break;
 		}
 	}
-	//printf("Options selected: %s \n",selected_options);
-	int total = depthfirstapply(char *path, int pathfun(char *path), char *opts);
+	selected_directory = get_dir(argv[optind]);
+	printf("Options selected: %s \n",selected_options);
+	printf("Directory to be scanned: %s \n", selected_directory);
+
+	//int total = depthfirstapply(char *path, int pathfun(char *path), char *opts);
 
 	return(0);
 }
 
 int depthfirstapply(char* path, int pathfun(char *path), char *opts){
 	DIR *directory;
-	
+	return 0;	
 }
 
 int sizepathfun(char *path){
@@ -85,15 +99,12 @@ int sizepathfun(char *path){
 }
 
 //returns a starting directory is given, if not given, current dir will be default
-char *check_dir(char * dir){
-	char directory[4096];
+char *get_dir(char * dir){
 	char cur_directory[2] = ".";
 	if(dir == NULL){
-		directory = cur_directory;
+		return cur_directory;
 	}
 	else {
-		directory = dir;
+		return dir;
 	}
-
-	return (directory);
 }

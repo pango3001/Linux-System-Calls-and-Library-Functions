@@ -20,7 +20,7 @@
 
 
 #define MAX_ARGS 10
-
+#define MAX_SIZE 4096
 
 //======== PROTOTYPES =========
 int depthfirstapply(char *path, int pathfun(char *path),char *opts);
@@ -31,14 +31,14 @@ char *get_dir(char *dir);
 
 int main(int argc, char **argv){
 	int options;
-	char selected_directory[4096];
-	char selected_options[MAX_ARGS];
+	char *selected_directory;
+	char selected_options[10] = "";
 	while((options = getopt(argc, argv, "haB:bmcd:HLs")) != -1){
 		switch(options){
 			case 'h':  
 				printf("Usage: mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2> ...\n");
 				printf("\t-a Write count for all files, not just directories.\n");
-				printf("\t -B M Scale sizes by M before printing; for example, -BM prints size in units of 1,048,576 bytes.\n");
+				printf("\t-B M Scale sizes by M before printing; for example, -BM prints size in units of 1,048,576 bytes.\n");
 				printf("\t-b Print size in bytes.\n");
 				printf("\t-c Print a grand total.\n");
 				printf("\t-d N Print the total for a directory only if it is N or fewer levels below the command line argument.\n");
@@ -57,17 +57,11 @@ int main(int argc, char **argv){
 			case 'b':
 				strcat(selected_options, "b");
 				break;
-			case 'm':
-				strcat(selected_options, "m");
-				break;
 			case 'c':
 				strcat(selected_options, "c");
 				break;
 			case 'd':
 				strcat(selected_options, "d");
-				break;
-			case 'N':
-				strcat(selected_options, "N");	
 				break;
 			case 'H':
 				strcat(selected_options, "H");
@@ -78,10 +72,13 @@ int main(int argc, char **argv){
 			case 's':
 				strcat(selected_options, "s");
 				break;
+			default:
+				printf("ERROR\n");
+				return EXIT_FAILURE;
 		}
 	}
 	selected_directory = get_dir(argv[optind]);
-	printf("Options selected: %s \n",selected_options);
+	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n", selected_directory);
 
 	//int total = depthfirstapply(char *path, int pathfun(char *path), char *opts);
@@ -91,6 +88,49 @@ int main(int argc, char **argv){
 
 int depthfirstapply(char* path, int pathfun(char *path), char *opts){
 	DIR *directory;
+	struct dirent *entry;
+	struct stat info;
+	int result;
+	
+	if(!(directory = opendir(path))){
+		return -1;
+	}
+	
+	while((entry = readdir(directory)) != NULL){
+		char *name = entry->d_name;
+		char path_name[MAX_SIZE];
+		
+		sprintf(path_name, "%s/%s", path, name);
+		lstat(path_name, &info);
+		mode_t mode = info.st_mode;
+		
+		if(S_ISDIR(mode){
+			if(strcmp(name,".") == 0 || strcmp(name, "..") == 0) continue;
+			int size = depthfirstapply(path_name, pathfun, options, scale);
+			if(size >= 0){
+				result += size;
+				if(strstr(options, "s") != NULL) continue;
+				if(((strstr(options, "B") != NULL) || (strstr(options, "m") != NULL)) && size < 1) size =1;
+				if(strstr(options,"H") != NULL){
+					human_read(size, path_name);
+				}
+				else{
+					printf(%-7d %s\n",size, path_name);
+				}
+			}
+		}
+		else{
+			int size = pathfun
+				
+		
+	}
+	
+
+
+
+
+	closedir(directory);
+	
 	return 0;	
 }
 
@@ -100,9 +140,11 @@ int sizepathfun(char *path){
 
 //returns a starting directory is given, if not given, current dir will be default
 char *get_dir(char * dir){
-	char cur_directory[2] = ".";
+	//char cwd[2] = ".";
+	char cwd[MAX_SIZE];
+	getcwd(cwd, sizeof(cwd));
 	if(dir == NULL){
-		return cur_directory;
+		return cwd;
 	}
 	else {
 		return dir;

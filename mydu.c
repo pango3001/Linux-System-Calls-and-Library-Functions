@@ -17,6 +17,7 @@
 #include <grp.h>
 #include <pwd.h>
 #include <errno.h>
+#include <stack>
 
 
 #define MAX_ARGS 10
@@ -24,8 +25,12 @@
 
 //======== PROTOTYPES =========
 int depthfirstapply(char *path, int pathfun(char *path),char *opts);
-int sizepathfun(char *path);
+//int sizepathfun(char *path);
 char *get_dir(char *dir);
+
+
+//int traverse(char *dir);
+
 
 //=========== MAIN ============
 
@@ -57,6 +62,12 @@ int main(int argc, char **argv){
 			case 'b':
 				strcat(selected_options, "b");
 				break;
+			case 'm':
+                                strcat(selected_options, "m");
+                                break;
+			case 'M':
+                                strcat(selected_options, "M");
+                                break;
 			case 'c':
 				strcat(selected_options, "c");
 				break;
@@ -73,70 +84,33 @@ int main(int argc, char **argv){
 				strcat(selected_options, "s");
 				break;
 			default:
-				printf("ERROR\n");
+				printf("ERROR: use option -h for help.\n");
 				return EXIT_FAILURE;
 		}
 	}
 	selected_directory = get_dir(argv[optind]);
 	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n", selected_directory);
-
+	
+	traverse(selected_directory);
 	//int total = depthfirstapply(char *path, int pathfun(char *path), char *opts);
 
 	return(0);
 }
 
-int depthfirstapply(char* path, int pathfun(char *path), char *opts){
-	DIR *directory;
-	struct dirent *entry;
+
+
+
+
+
+int depthfirstapply(char* path, int pathfun(char *path), char *options){
+	DIR *dir;
+	struct directory;
 	struct stat info;
-	int result;
 	
-	if(!(directory = opendir(path))){
-		return -1;
-	}
 	
-	while((entry = readdir(directory)) != NULL){
-		char *name = entry->d_name;
-		char path_name[MAX_SIZE];
+
 		
-		sprintf(path_name, "%s/%s", path, name);
-		lstat(path_name, &info);
-		mode_t mode = info.st_mode;
-		
-		if(S_ISDIR(mode){
-			if(strcmp(name,".") == 0 || strcmp(name, "..") == 0) continue;
-			int size = depthfirstapply(path_name, pathfun, options, scale);
-			if(size >= 0){
-				result += size;
-				if(strstr(options, "s") != NULL) continue;
-				if(((strstr(options, "B") != NULL) || (strstr(options, "m") != NULL)) && size < 1) size =1;
-				if(strstr(options,"H") != NULL){
-					human_read(size, path_name);
-				}
-				else{
-					printf(%-7d %s\n",size, path_name);
-				}
-			}
-		}
-		else{
-			int size = pathfun
-				
-		
-	}
-	
-
-
-
-
-	closedir(directory);
-	
-	return 0;	
-}
-
-int sizepathfun(char *path){
-	return(0);
-}
 
 //returns a starting directory is given, if not given, current dir will be default
 char *get_dir(char * dir){

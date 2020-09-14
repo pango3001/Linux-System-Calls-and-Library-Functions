@@ -17,14 +17,14 @@
 #include <grp.h>
 #include <pwd.h>
 #include <errno.h>
-#include <stack>
 
 
 #define MAX_ARGS 10
 #define MAX_SIZE 4096
 
 //======== PROTOTYPES =========
-int depthfirstapply(char *path, int pathfun(char *path),char *opts);
+//int depthfirstapply(char *path, int pathfun(char *path),char *opts);
+int depthfirstapply(char *sel_path, int indent);
 //int sizepathfun(char *path);
 char *get_dir(char *dir);
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv){
 	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n", selected_directory);
 	
-	traverse(selected_directory);
+	depthfirstapply(selected_directory, 0);
 	//int total = depthfirstapply(char *path, int pathfun(char *path), char *opts);
 
 	return(0);
@@ -103,12 +103,40 @@ int main(int argc, char **argv){
 
 
 
-int depthfirstapply(char* path, int pathfun(char *path), char *options){
-	DIR *dir;
-	struct directory;
-	struct stat info;
+int depthfirstapply(char* sel_path, int indent){
 	
+	unsigned long size;	
+	struct stat st;
 	
+	struct dirent *entry;
+	char *name = entry->d_name; //file name	
+
+	DIR *dir = opendir(sel_path);
+
+	
+	//struct stat info;
+	//char *name = entry->d_name;
+	//char pathname[4096];
+	//sprintf(pathname, "%s/%s", sel_path, name);
+	
+	while((entry = readdir(dir)) != NULL){
+		if(entry->d_type == DT_DIR){ //DT_DIR menas a directory
+			char path[1024];
+			if(strcmp(entry->d_name,".") != 0 || strcmp(entry->d_name, "..") != 0)
+				continue;
+			snprintf(path, sizeof(path),"%s/%s", sel_path, entry->d_name);
+			printf("%*s[%s]\n", indent, "", entry->d_name);
+			depthfirstapply(sel_path, indent + 2);
+		}
+		else{
+			printf("%*s- %s\n",indent, "", entry->d_name);
+		}
+			//strcpy(path, sel_path);
+			//strcat(path, "/");
+			//strcat(path, entry->d_name);
+		}
+	closedir(dir);
+}	
 
 		
 

@@ -23,12 +23,12 @@
 #define MAX_SIZE 4096
 
 //======== PROTOTYPES =========
-//int depthfirstapply(char *path, int pathfun(char *path),char *opts);
-int depthfirstapply(char *sel_path, int indent);
-//int sizepathfun(char *path);
-char *get_dir(char *dir);
-
-
+int depthfirstapply(char *path, int pathfun(char *path),char *opts);
+//int depthfirstapply(const char *sel_path);
+int sizepathfun(char *path);
+char *get_dir(char *dir,char *path);
+void listdir(const char *name, int indent);
+void listdir1(char *path, size_t size);
 //int traverse(char *dir);
 
 
@@ -88,67 +88,141 @@ int main(int argc, char **argv){
 				return EXIT_FAILURE;
 		}
 	}
-	selected_directory = get_dir(argv[optind]);
+	char path[MAX_SIZE];
+	selected_directory = get_dir(argv[optind], path);
 	printf("Options selected: %s \n", selected_options);
-	printf("Directory to be scanned: %s \n", selected_directory);
-	
-	depthfirstapply(selected_directory, 0);
+	printf("Directory to be scanned: %s \n\n", selected_directory);
+	//listdir1(selected_directory,0);
+	depthfirstapply(selected_directory, sizepathfun, selected_options);
 	//int total = depthfirstapply(char *path, int pathfun(char *path), char *opts);
 
 	return(0);
 }
-
-
-
-
-
-
-int depthfirstapply(char* sel_path, int indent){
 	
-	unsigned long size;	
-	struct stat st;
-	
-	struct dirent *entry;
-	char *name = entry->d_name; //file name	
+int depthfirstapply(char *path, int pathfun(char *pathl),char* opts) {
+	/* XXX will use a fixed sized buf here and not size check */ 
+	char buf[1024];
+	struct stat statbuf;
+	struct dirent *direntp;
+	DIR *dirp;
+	int sum = 0;
 
-	DIR *dir = opendir(sel_path);
+	if ((dirp = opendir(path)) == NULL) {
+		perror("Can't open directory");
+		return -1;
+	}
 
-	
-	//struct stat info;
-	//char *name = entry->d_name;
-	//char pathname[4096];
-	//sprintf(pathname, "%s/%s", sel_path, name);
-	
-	while((entry = readdir(dir)) != NULL){
-		if(entry->d_type == DT_DIR){ //DT_DIR menas a directory
-			char path[1024];
-			if(strcmp(entry->d_name,".") != 0 || strcmp(entry->d_name, "..") != 0)
-				continue;
-			snprintf(path, sizeof(path),"%s/%s", sel_path, entry->d_name);
-			printf("%*s[%s]\n", indent, "", entry->d_name);
-			depthfirstapply(sel_path, indent + 2);
+	while ((direntp = readdir(dirp)) != NULL) {
+
+		if ( strcmp(direntp->d_name, ".") != 0 && strcmp(direntp->d_name, "..") != 0 ) {
+			strcat(strcat(strcpy(buf, path), "/"), direntp->d_name);
+
+			if ( lstat(buf, &statbuf) == -1) {
+				perror("Couldn't get file status");
+				fprintf(stderr, "\t%s %s\n", path, direntp->d_name);
+				return -1;
+			}
+
+			if ( S_ISDIR(statbuf.st_mode) ) {
+				sum += pathfun(buf);	
+				depthfirstapply(buf, pathfun, opts);
+			}
+			else
+				sum += pathfun(buf);	
 		}
-		else{
-			printf("%*s- %s\n",indent, "", entry->d_name);
-		}
-			//strcpy(path, sel_path);
-			//strcat(path, "/");
-			//strcat(path, entry->d_name);
-		}
-	closedir(dir);
-}	
 
+	}
+
+	while ((closedir(dirp) == -1) && (errno == EINTR)) {}
+
+	/*stat(path, &statbuf);*/
+	printf("%i %s\n", sum, path);
+
+	return 1;	
+}
+
+int sizepathfun(char *path) {
+	struct stat statbuf;
+
+	if ( lstat(path, &statbuf) == -1) {
+		perror("Couldn't get file status");
+		fprintf(stderr, "\t%s\n", path);
+		return -1;
+	}
+	/* printing off_t */
+	/* printf("%li\t%s\n", (long)statbuf.st_size, path); */
+
+	return statbuf.st_size;
+}
 		
 
 //returns a starting directory is given, if not given, current dir will be default
-char *get_dir(char * dir){
+char *get_dir(char * dir,char *path){
 	//char cwd[2] = ".";
-	char cwd[MAX_SIZE];
-	getcwd(cwd, sizeof(cwd));
+	getcwd(path, MAX_SIZE);
 	if(dir == NULL){
-		return cwd;
+		return path;
 	}
 	else {
 		return dir;
 	}
 }
+
+void listdir(const char *name, int indent)
+{
+    DIR *dir;
+    struct dirent *entry;
+
+    if (!(dir = opendir(name)))
+        return;
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_DIR) {
+            char path[1024];
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+            snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
+            printf("%*s[%s]\n", indent, "", entry->d_name);
+            listdir(path, indent + 2);
+        } else {
+            printf("%*s- %s\n", indent, "", entry->d_name);
+        }
+    }
+    closedir(dir);
+}
+
+void listdir1(char *path, size_t size) {
+    DIR *dir;
+    struct dirent *entry;
+    size_t len = strlen(path);
+
+    if (!(dir = opendir(path))) {
+        fprintf(stderr, "path not found: %s: %s\n",
+                path, strerror(errno));
+        return;
+    }
+
+    puts(path);
+    while ((entry = readdir(dir)) != NULL) {
+        char *name = entry->d_name;
+        if (entry->d_type == DT_DIR) {
+            if (!strcmp(name, ".") || !strcmp(name, ".."))
+                continue;
+            if (len + strlen(name) + 2 > size) {
+                fprintf(stderr, "path too long: %s/%s\n", path, name);
+            } else {
+                path[len] = '/';
+                strcpy(path + len + 1, name);
+                listdir1(path, size);
+                path[len] = '\0';
+            }
+        } else {
+            printf("%s/%s\n", path, name);
+        }
+    }
+    closedir(dir);
+}
+
+
+
+

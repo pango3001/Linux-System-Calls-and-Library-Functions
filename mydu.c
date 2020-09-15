@@ -92,33 +92,32 @@ int main(int argc, char **argv){
 	selected_directory = get_dir(argv[optind], path);
 	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n\n", selected_directory);
-	//listdir1(selected_directory,0);
+	
 	depthfirstapply(selected_directory, sizepathfun, selected_options);
-	//int total = depthfirstapply(char *path, int pathfun(char *path), char *opts);
-
+	
 	return(0);
 }
 	
 int depthfirstapply(char *path, int pathfun(char *pathl),char* opts) {
-	/* XXX will use a fixed sized buf here and not size check */ 
-	char buf[1024];
+	 
+	char buf[MAX_SIZE];
 	struct stat statbuf;
 	struct dirent *direntp;
-	DIR *dirp;
+	DIR *dir = opendir(path);
 	int sum = 0;
 
-	if ((dirp = opendir(path)) == NULL) {
-		perror("Can't open directory");
+	if (dir == NULL) {
+		perror("ERROR: Failed to open directory\n");
 		return -1;
 	}
-
-	while ((direntp = readdir(dirp)) != NULL) {
-
+		
+	while ((direntp = readdir(dir)) != NULL) {
+		// check if directory is current or previous
 		if ( strcmp(direntp->d_name, ".") != 0 && strcmp(direntp->d_name, "..") != 0 ) {
-			strcat(strcat(strcpy(buf, path), "/"), direntp->d_name);
-
+			strcat(strcat(strcpy(buf, path), "/"), direntp->d_name); // add directory to buffer
+			//checks file status
 			if ( lstat(buf, &statbuf) == -1) {
-				perror("Couldn't get file status");
+				perror("ERROR: File status not found.\n");
 				fprintf(stderr, "\t%s %s\n", path, direntp->d_name);
 				return -1;
 			}
@@ -132,26 +131,23 @@ int depthfirstapply(char *path, int pathfun(char *pathl),char* opts) {
 		}
 
 	}
-
-	while ((closedir(dirp) == -1) && (errno == EINTR)) {}
-
-	/*stat(path, &statbuf);*/
-	printf("%i %s\n", sum, path);
+	
+	closedir(dir);	
+	
+	printf("%-10d %s\n", sum, path);
 
 	return 1;	
 }
 
+// returns total size in bytes
 int sizepathfun(char *path) {
 	struct stat statbuf;
-
-	if ( lstat(path, &statbuf) == -1) {
-		perror("Couldn't get file status");
+	//checks file status
+	if (lstat(path, &statbuf) == -1) {
+		perror("ERROR: File status not found.\n");
 		fprintf(stderr, "\t%s\n", path);
 		return -1;
 	}
-	/* printing off_t */
-	/* printf("%li\t%s\n", (long)statbuf.st_size, path); */
-
 	return statbuf.st_size;
 }
 		
@@ -167,62 +163,4 @@ char *get_dir(char * dir,char *path){
 		return dir;
 	}
 }
-
-void listdir(const char *name, int indent)
-{
-    DIR *dir;
-    struct dirent *entry;
-
-    if (!(dir = opendir(name)))
-        return;
-
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_DIR) {
-            char path[1024];
-            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                continue;
-            snprintf(path, sizeof(path), "%s/%s", name, entry->d_name);
-            printf("%*s[%s]\n", indent, "", entry->d_name);
-            listdir(path, indent + 2);
-        } else {
-            printf("%*s- %s\n", indent, "", entry->d_name);
-        }
-    }
-    closedir(dir);
-}
-
-void listdir1(char *path, size_t size) {
-    DIR *dir;
-    struct dirent *entry;
-    size_t len = strlen(path);
-
-    if (!(dir = opendir(path))) {
-        fprintf(stderr, "path not found: %s: %s\n",
-                path, strerror(errno));
-        return;
-    }
-
-    puts(path);
-    while ((entry = readdir(dir)) != NULL) {
-        char *name = entry->d_name;
-        if (entry->d_type == DT_DIR) {
-            if (!strcmp(name, ".") || !strcmp(name, ".."))
-                continue;
-            if (len + strlen(name) + 2 > size) {
-                fprintf(stderr, "path too long: %s/%s\n", path, name);
-            } else {
-                path[len] = '/';
-                strcpy(path + len + 1, name);
-                listdir1(path, size);
-                path[len] = '\0';
-            }
-        } else {
-            printf("%s/%s\n", path, name);
-        }
-    }
-    closedir(dir);
-}
-
-
-
 

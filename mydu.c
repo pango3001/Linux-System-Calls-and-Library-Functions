@@ -117,9 +117,6 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* opt
 	}
 		
 	while ((direntp = readdir(dir)) != NULL){
-
-
-
 		// check if directory is current or previous
 		if ( strcmp(direntp->d_name, ".") != 0 && strcmp(direntp->d_name, "..") != 0 ) {
 			strcat(strcat(strcpy(buf, path), "/"), direntp->d_name); // add directory to buffer

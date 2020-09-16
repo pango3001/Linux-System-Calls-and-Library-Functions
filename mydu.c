@@ -23,14 +23,9 @@
 #define MAX_SIZE 4096
 
 //======== PROTOTYPES =========
-int depthfirstapply(char *path, int pathfun(char *path),char *opts);
-//int depthfirstapply(const char *sel_path);
-int sizepathfun(char *path);
+int depthfirstapply(char *path, int pathfun(char *path, char *options),char *options, int *fileCount);
+int sizepathfun(char *path, char *options);
 char *get_dir(char *dir,char *path);
-void listdir(const char *name, int indent);
-void listdir1(char *path, size_t size);
-//int traverse(char *dir);
-
 
 //=========== MAIN ============
 
@@ -38,6 +33,11 @@ int main(int argc, char **argv){
 	int options;
 	char *selected_directory;
 	char selected_options[10] = "";
+	
+	int *fileCount;
+	fileCount = malloc(sizeof(int));    //allocating memory to pointer fileCount
+	*fileCount = 0;
+
 	while((options = getopt(argc, argv, "haB:bmcd:HLs")) != -1){
 		switch(options){
 			case 'h':  
@@ -93,41 +93,53 @@ int main(int argc, char **argv){
 	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n\n", selected_directory);
 	
-	depthfirstapply(selected_directory, sizepathfun, selected_options);
+	depthfirstapply(selected_directory, sizepathfun, selected_options, fileCount);
 	
+	printf("Regular files:%d\n\n", *fileCount);
+	
+	
+	free(fileCount);			
 	return(0);
 }
 	
-int depthfirstapply(char *path, int pathfun(char *pathl),char* opts) {
+int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* options, int *fileCount) {
 	 
 	char buf[MAX_SIZE];
-	struct stat statbuf;
-	struct dirent *direntp;
+	struct stat statbuf; 
+	struct dirent *direntp; // direntory entry pointer
 	DIR *dir = opendir(path);
 	int sum = 0;
+			
 
 	if (dir == NULL) {
 		perror("ERROR: Failed to open directory\n");
 		return -1;
 	}
 		
-	while ((direntp = readdir(dir)) != NULL) {
+	while ((direntp = readdir(dir)) != NULL){
+
+
+
 		// check if directory is current or previous
 		if ( strcmp(direntp->d_name, ".") != 0 && strcmp(direntp->d_name, "..") != 0 ) {
 			strcat(strcat(strcpy(buf, path), "/"), direntp->d_name); // add directory to buffer
 			//checks file status
-			if ( lstat(buf, &statbuf) == -1) {
+			if (lstat(buf, &statbuf) == -1) {
 				perror("ERROR: File status not found.\n");
 				fprintf(stderr, "\t%s %s\n", path, direntp->d_name);
 				return -1;
 			}
-
-			if ( S_ISDIR(statbuf.st_mode) ) {
-				sum += pathfun(buf);	
-				depthfirstapply(buf, pathfun, opts);
+			//Checks if the entry is a regular file
+			if (S_ISREG(statbuf.st_mode)){
+	                        *fileCount = *fileCount + 1;
+	                }
+			// checks if the entry is a directory
+			if (S_ISDIR(statbuf.st_mode)) {
+				sum += sizepathfun(buf, options);	
+				depthfirstapply(buf, sizepathfun, options, fileCount);
 			}
 			else
-				sum += pathfun(buf);	
+				sum += sizepathfun(buf, options);	
 		}
 
 	}
@@ -136,11 +148,11 @@ int depthfirstapply(char *path, int pathfun(char *pathl),char* opts) {
 	
 	printf("%-10d %s\n", sum, path);
 
-	return 1;	
+	return sum;	
 }
 
 // returns total size in bytes
-int sizepathfun(char *path) {
+int sizepathfun(char *path, char *options) {
 	struct stat statbuf;
 	//checks file status
 	if (lstat(path, &statbuf) == -1) {
@@ -148,7 +160,13 @@ int sizepathfun(char *path) {
 		fprintf(stderr, "\t%s\n", path);
 		return -1;
 	}
-	return statbuf.st_size;
+	if((strstr(options, "b") != NULL) || (strstr(options, "B") != NULL) || (strstr(options, "m") != NULL)){
+			return statbuf.st_size;
+		}
+	else
+			return (statbuf.st_blocks/2);
+		
+	//return statbuf.st_size;
 }
 		
 

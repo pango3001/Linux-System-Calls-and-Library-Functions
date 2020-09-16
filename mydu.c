@@ -141,7 +141,7 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* opt
 			// checks if the entry is a directory
 			if (S_ISDIR(statbuf.st_mode)) {
 				sum += sizepathfun(buf, options);	
-				depthfirstapply(buf, sizepathfun, options, fileCount);
+				sum += depthfirstapply(buf, sizepathfun, options, fileCount);
 			}
 			else
 				sum += sizepathfun(buf, options);	

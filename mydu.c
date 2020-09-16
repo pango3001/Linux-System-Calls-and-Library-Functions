@@ -133,6 +133,11 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* opt
 			if (S_ISREG(statbuf.st_mode)){
 	                        *fileCount = *fileCount + 1;
 	                }
+                        if ((S_ISREG(statbuf.st_mode) && (strstr(options, "a") != NULL))) {
+                                //sum += sizepathfun(buf, options);
+                                printf("%-10d %s/%s\n", sizepathfun(buf, options), path, direntp->d_name);
+                        }
+
 			// checks if the entry is a directory
 			if (S_ISDIR(statbuf.st_mode)) {
 				sum += sizepathfun(buf, options);	

@@ -26,6 +26,7 @@
 int depthfirstapply(char *path, int pathfun(char *path, char *options),char *options, int counts[]);
 int sizepathfun(char *path, char *options);
 char *get_dir(char *dir,char *path);
+char *human_read(double size, char *buf);
 
 //=========== MAIN ============
 
@@ -34,12 +35,13 @@ int main(int argc, char **argv){
 	char *selected_directory;
 	char selected_options[10] = "";
 	unsigned int total;
-
+	char path[MAX_SIZE];
+	char buffer[MAX_SIZE];
 	unsigned int counts[2] = {0,1}; // counter for files and directories
 	
-	int *fileCount;
-	fileCount = malloc(sizeof(int));    //allocating memory to pointer fileCount
-	*fileCount = 0;
+	//int *fileCount;
+	//fileCount = malloc(sizeof(int));    //allocating memory to pointer fileCount
+	//*fileCount = 0;
 
 	while((options = getopt(argc, argv, "haB:bmcd:HLs")) != -1){
 		switch(options){
@@ -91,28 +93,34 @@ int main(int argc, char **argv){
 				return EXIT_FAILURE;
 		}
 	}
-	char path[MAX_SIZE];
+	
 	selected_directory = get_dir(argv[optind], path);
 	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n\n", selected_directory);
 	
-	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts/*fileCount*/);
+	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts);
 	
-	if(strstr(selected_options, "c") != NULL){
-		printf("Total: %d\n", total);	
-	}
+	if((strstr(selected_options, "c") != NULL) && (strstr(selected_options, "H") != NULL)){
+                printf("Total: %s\n", human_read((double) total, buffer));
+   	}
+	else if (strstr(selected_options, "c") != NULL){
+                printf("Total: %d\n", total);
+        }
+
+	
 
 	printf("\nDirectories: %d\n", counts[1]);
-	printf("Regular files:%d\n\n", /**fileCount*/ counts[0] );
+	printf("Regular files:%d\n\n", counts[0] );
 		
 	
-	free(fileCount);			
+	//free(fileCount);			
 	return(0);
 }
 	
 int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* options, int counts[]) {
 	 
 	char buf[MAX_SIZE];
+	char altbuf[MAX_SIZE];
 	struct stat statbuf; 
 	struct dirent *direntp; // direntory entry pointer
 	DIR *dir = opendir(path);
@@ -141,8 +149,15 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* opt
                         if ((S_ISREG(statbuf.st_mode) && (strstr(options, "a") != NULL))) {
                                 //prints files along with directories
                                 //sum += sizepathfun(buf, options);
-                                printf("%-10d %s/%s\n", sizepathfun(buf, options), path, direntp->d_name);
-                        }
+                                int size;
+				size = sizepathfun(buf,options);
+                                if(strstr(options, "H") != NULL){
+                			printf("%-10s %s/%s\n", human_read((double)size, altbuf), path, direntp->d_name);
+        			}
+        			else {
+					printf("%-10d %s/%s\n", size, path, direntp->d_name);
+                        	}
+			}
 
 			// checks if the entry is a directory
 			if (S_ISDIR(statbuf.st_mode)) {
@@ -158,7 +173,11 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* opt
 	
 	closedir(dir);	
 	
-	printf("%-10d %s\n", sum, path);
+	if(strstr(options, "H") != NULL){
+		printf("%-10s %s\n", human_read(sum,altbuf), path);
+	}
+	
+	else {printf("%-10d %s\n", sum, path);}
 
 	return sum;	
 }
@@ -192,5 +211,17 @@ char *get_dir(char * dir,char *path){
 	else {
 		return dir;
 	}
+}
+
+
+char* human_read(double size/*in bytes*/, char *buf) {
+	unsigned int index = 0;
+	const char* suffix_units[] = {"B", "kB", "MB", "GB", "TB"};
+	while (size > 1024) {
+		size /= 1024;
+		index++;
+    }
+    sprintf(buf, "%.*f %s", index, size, suffix_units[index]);
+    return buf;
 }
 

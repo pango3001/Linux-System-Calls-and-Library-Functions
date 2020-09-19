@@ -23,16 +23,19 @@
 #define MAX_SIZE 4096
 
 //======== PROTOTYPES =========
-int depthfirstapply(char *path, int pathfun(char *path, char *options),char *options, int *fileCount);
+int depthfirstapply(char *path, int pathfun(char *path, char *options),char *options, int counts[]);
 int sizepathfun(char *path, char *options);
 char *get_dir(char *dir,char *path);
 
 //=========== MAIN ============
 
 int main(int argc, char **argv){
-	int options;
+	unsigned int options;
 	char *selected_directory;
 	char selected_options[10] = "";
+	unsigned int total;
+
+	unsigned int counts[2] = {0,1}; // counter for files and directories
 	
 	int *fileCount;
 	fileCount = malloc(sizeof(int));    //allocating memory to pointer fileCount
@@ -93,16 +96,21 @@ int main(int argc, char **argv){
 	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n\n", selected_directory);
 	
-	depthfirstapply(selected_directory, sizepathfun, selected_options, fileCount);
+	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts/*fileCount*/);
 	
-	printf("Regular files:%d\n\n", *fileCount);
-	
+	if(strstr(selected_options, "c") != NULL){
+		printf("Total: %d\n", total);	
+	}
+
+	printf("\nDirectories: %d\n", counts[1]);
+	printf("Regular files:%d\n\n", /**fileCount*/ counts[0] );
+		
 	
 	free(fileCount);			
 	return(0);
 }
 	
-int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* options, int *fileCount) {
+int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* options, int counts[]) {
 	 
 	char buf[MAX_SIZE];
 	struct stat statbuf; 
@@ -128,17 +136,19 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* opt
 			}
 			//Checks if the entry is a regular file
 			if (S_ISREG(statbuf.st_mode)){
-	                        *fileCount = *fileCount + 1;
+	                        counts[0] = counts[0] + 1; // adds to count of files
 	                }
                         if ((S_ISREG(statbuf.st_mode) && (strstr(options, "a") != NULL))) {
+                                //prints files along with directories
                                 //sum += sizepathfun(buf, options);
                                 printf("%-10d %s/%s\n", sizepathfun(buf, options), path, direntp->d_name);
                         }
 
 			// checks if the entry is a directory
 			if (S_ISDIR(statbuf.st_mode)) {
+				counts[1] = counts [1] + 1; //adds to count of directories
 				sum += sizepathfun(buf, options);	
-				sum += depthfirstapply(buf, sizepathfun, options, fileCount);
+				sum += depthfirstapply(buf, sizepathfun, options, counts);
 			}
 			else
 				sum += sizepathfun(buf, options);	

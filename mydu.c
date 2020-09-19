@@ -23,8 +23,8 @@
 #define MAX_SIZE 4096
 
 //======== PROTOTYPES =========
-int depthfirstapply(char *path, int pathfun(char *path, char *options),char *options, int counts[]);
-int sizepathfun(char *path, char *options);
+int depthfirstapply(char *path, int pathfun(char *path, char *options, int scale),char *options, int counts[],int scale);
+int sizepathfun(char *path, char *options, int scale);
 char *get_dir(char *dir,char *path);
 char *human_read(double size, char *buf);
 
@@ -34,10 +34,12 @@ int main(int argc, char **argv){
 	unsigned int options;
 	char *selected_directory;
 	char selected_options[10] = "";
-	unsigned int total;
+	unsigned int total; // total size
 	char path[MAX_SIZE];
 	char buffer[MAX_SIZE];
 	unsigned int counts[2] = {0,1}; // counter for files and directories
+	unsigned int scale = 1048576; // default for scale
+	unsigned int depth;
 	
 	//int *fileCount;
 	//fileCount = malloc(sizeof(int));    //allocating memory to pointer fileCount
@@ -63,6 +65,7 @@ int main(int argc, char **argv){
 				break;
 			case 'B':
 				strcat(selected_options, "B");
+				scale = atoi(optarg); // argument replaces default
 				break;
 			case 'b':
 				strcat(selected_options, "b");
@@ -70,14 +73,12 @@ int main(int argc, char **argv){
 			case 'm':
                                 strcat(selected_options, "m");
                                 break;
-			case 'M':
-                                strcat(selected_options, "M");
-                                break;
 			case 'c':
 				strcat(selected_options, "c");
 				break;
 			case 'd':
 				strcat(selected_options, "d");
+				depth = atoi(optarg);
 				break;
 			case 'H':
 				strcat(selected_options, "H");
@@ -98,15 +99,16 @@ int main(int argc, char **argv){
 	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n\n", selected_directory);
 	
-	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts);
+	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts, scale);
 	
-	if((strstr(selected_options, "c") != NULL) && (strstr(selected_options, "H") != NULL)){
-                printf("Total: %s\n", human_read((double) total, buffer));
-   	}
-	else if (strstr(selected_options, "c") != NULL){
-                printf("Total: %d\n", total);
-        }
-
+	if((strstr(selected_options, "c") != NULL)){
+		if (strstr(selected_options, "H") != NULL){
+                	printf("Total: %s\n", human_read((double) total, buffer));
+		}
+		else {
+                	printf("Total: %d\n", total);
+        	}
+	}
 	
 
 	printf("\nDirectories: %d\n", counts[1]);
@@ -117,14 +119,14 @@ int main(int argc, char **argv){
 	return(0);
 }
 	
-int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* options, int counts[]) {
+int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale),char* options, int counts[], int scale) {
 	 
-	char buf[MAX_SIZE];
-	char altbuf[MAX_SIZE];
+	char buf[MAX_SIZE]; //buffer for path
+	char altbuf[MAX_SIZE]; //alternative buffer for converting to human readable
 	struct stat statbuf; 
 	struct dirent *direntp; // direntory entry pointer
 	DIR *dir = opendir(path);
-	int sum = 0;
+	unsigned int sum = 0; //size sum
 			
 
 	if (dir == NULL) {
@@ -146,11 +148,11 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* opt
 			if (S_ISREG(statbuf.st_mode)){
 	                        counts[0] = counts[0] + 1; // adds to count of files
 	                }
-                        if ((S_ISREG(statbuf.st_mode) && (strstr(options, "a") != NULL))) {
+                        // if regular file and a selection then print stats on files too
+			if ((S_ISREG(statbuf.st_mode) && (strstr(options, "a") != NULL))) {
                                 //prints files along with directories
                                 //sum += sizepathfun(buf, options);
-                                int size;
-				size = sizepathfun(buf,options);
+                                unsigned int size = sizepathfun(buf, options, scale);
                                 if(strstr(options, "H") != NULL){
                 			printf("%-10s %s/%s\n", human_read((double)size, altbuf), path, direntp->d_name);
         			}
@@ -162,28 +164,28 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options),char* opt
 			// checks if the entry is a directory
 			if (S_ISDIR(statbuf.st_mode)) {
 				counts[1] = counts [1] + 1; //adds to count of directories
-				sum += sizepathfun(buf, options);	
-				sum += depthfirstapply(buf, sizepathfun, options, counts);
+				sum += sizepathfun(buf, options, scale);
+				sum += depthfirstapply(buf, sizepathfun, options, counts, scale);
 			}
 			else
-				sum += sizepathfun(buf, options);	
+				sum += sizepathfun(buf, options, scale);	
 		}
 
 	}
 	
-	closedir(dir);	
-	
-	if(strstr(options, "H") != NULL){
-		printf("%-10s %s\n", human_read(sum,altbuf), path);
+	closedir(dir);
+
+	//prints the size and path
+	if(strstr(options, "H") != NULL){ // human readable
+		printf("%-10s %s\n", human_read((double) sum,altbuf), path);
 	}
-	
 	else {printf("%-10d %s\n", sum, path);}
 
 	return sum;	
 }
 
 // returns total size in bytes
-int sizepathfun(char *path, char *options) {
+int sizepathfun(char *path, char *options, int scale) {
 	struct stat statbuf;
 	//checks file status
 	if (lstat(path, &statbuf) == -1) {
@@ -191,11 +193,17 @@ int sizepathfun(char *path, char *options) {
 		fprintf(stderr, "\t%s\n", path);
 		return -1;
 	}
-	if((strstr(options, "b") != NULL) || (strstr(options, "B") != NULL) || (strstr(options, "m") != NULL)){
-			return statbuf.st_size;
+	if((strstr(options, "b") != NULL)){
+			return statbuf.st_size;	
+	}
+	else if((strstr(options, "B") != NULL) || (strstr(options, "m") != NULL)){
+                int size = statbuf.st_size/scale;
+		if (size > 1){ return size;}
+		else { return 1;}
 		}
+
 	else
-			return (statbuf.st_blocks/2);
+		return (statbuf.st_blocks/2);
 		
 	//return statbuf.st_size;
 }

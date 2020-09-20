@@ -3,14 +3,15 @@
 //DATE: SEPT 7 2020
 //FILENAME: mydu.c
 //
-//DESCRIPTION:
+//DESCRIPTION: This exercise deals with the implementation of the Unix application known as du. The command du displays the size of
+//subdirectories of the tree rooted at the directories/files specified on the command-line arguments. If called with no argument,
+//the du utility uses the current working directory. I will replicate the du command with my own "mydu" program.
 //
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
-//#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -28,11 +29,12 @@ int sizepathfun(char *path, char *options, int scale);
 char *get_dir(char *dir,char *path);
 char *human_read(double size, char *buf);
 bool option_check(char *options);
-//=========== MAIN ============
+
+//========= GLOBALS ===========
 
 unsigned int global_depth = -1;
 
-
+//=========== MAIN ============
 int main(int argc, char **argv){
 	unsigned int options;
 	char *selected_directory;
@@ -133,6 +135,9 @@ int main(int argc, char **argv){
 	return(0);
 }
 	
+
+//====== DEPTHFIRSTAPPLY ========
+
 int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale),char* options, int counts[], int scale, int depth) {
 	 
 	char buf[MAX_SIZE]; //buffer for path
@@ -218,6 +223,9 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 	return sum;	
 }
 
+
+//======= SIZEPATHFUN ========
+
 // returns total size in bytes
 int sizepathfun(char *path, char *options, int scale) {
 	struct stat statbuf;
@@ -243,6 +251,9 @@ int sizepathfun(char *path, char *options, int scale) {
 }
 		
 
+
+//======== GET_DIR ==========
+
 //returns a starting directory is given, if not given, current dir will be default
 char *get_dir(char * dir,char *path){
 	//char cwd[2] = ".";
@@ -256,6 +267,9 @@ char *get_dir(char * dir,char *path){
 }
 
 
+//======= HUMAN_READ =========
+
+// returns a human readable size followed by proper suffix
 char* human_read(double size/*in bytes*/, char *buf) {
 	unsigned int index = 0;
 	const char* suffix_units[] = {"B", "kB", "MB", "GB", "TB"};
@@ -267,6 +281,10 @@ char* human_read(double size/*in bytes*/, char *buf) {
     return buf;
 }
 
+
+//======== OPTION_CHECK ========
+
+// checks for compatable option
 bool option_check(char * options){
 	if((strstr(options, "B") != NULL) && (strstr(options, "m") != NULL)){
                 printf("ERROR: cannot have options 'B' and 'm' together\n");

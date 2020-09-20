@@ -3,14 +3,15 @@
 //DATE: SEPT 7 2020
 //FILENAME: mydu.c
 //
-//DESCRIPTION:
+//DESCRIPTION: This exercise deals with the implementation of the Unix application known as du. The command du displays the size of
+//subdirectories of the tree rooted at the directories/files specified on the command-line arguments. If called with no argument,
+//the du utility uses the current working directory. I will replicate the du command with my own "mydu" program.
 //
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
-//#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -28,11 +29,12 @@ int sizepathfun(char *path, char *options, int scale);
 char *get_dir(char *dir,char *path);
 char *human_read(double size, char *buf);
 bool option_check(char *options);
+
+//========= GLOBALS ===========
+
+int global_depth = -1;
+
 //=========== MAIN ============
-
-unsigned int global_depth = -1;
-
-
 int main(int argc, char **argv){
 	unsigned int options;
 	char *selected_directory;
@@ -40,7 +42,7 @@ int main(int argc, char **argv){
 	unsigned int total; // total size
 	char path[MAX_SIZE];
 	char buffer[MAX_SIZE];
-	unsigned int counts[2] = {0,1}; // counter for files and directories
+	unsigned int counts[3] = {0,0,0}; // counter for files and directories and symlinks
 	unsigned int scale = 1048576; // default for scale
 	unsigned int depth;
 	
@@ -124,12 +126,18 @@ int main(int argc, char **argv){
 	}
 
 	printf("\nDirectories: %d\n", counts[1]);
-	printf("Regular files:%d\n\n", counts[0] );
+	printf("Regular files:%d\n", counts[0]);
+	if(strstr(selected_options, "L") != NULL){
+		printf("Symbolic links: %d\n", counts[2]);
+	}
 		
-				
+	printf("\n");			
 	return(0);
 }
 	
+
+//====== DEPTHFIRSTAPPLY ========
+
 int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale),char* options, int counts[], int scale, int depth) {
 	 
 	char buf[MAX_SIZE]; //buffer for path
@@ -174,6 +182,20 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 				}
 			}
 			
+			// checks if entry is symbolic link
+			if ((S_ISLNK(statbuf.st_mode) && (strstr(options, "L") != NULL))) {
+			unsigned int size = sizepathfun(buf, options, scale);
+			counts[2] = counts[2] + 1; // add to count of symlinks
+                                if(!(strstr(options, "s") != NULL)){
+                                        if(strstr(options, "H") != NULL){
+                                                printf("%-10s %s/%s\n", human_read((double)size, altbuf), path, direntp->d_name);
+                                        }
+                                        else {
+                                                printf("%-10d %s/%s\n", size, path, direntp->d_name);
+                                        }
+                                }
+			}
+			
 			// checks if the entry is a directory
 			if (S_ISDIR(statbuf.st_mode)) {
 				// checks for depth of directory
@@ -201,6 +223,9 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 	return sum;	
 }
 
+
+//======= SIZEPATHFUN ========
+
 // returns total size in bytes
 int sizepathfun(char *path, char *options, int scale) {
 	struct stat statbuf;
@@ -226,6 +251,9 @@ int sizepathfun(char *path, char *options, int scale) {
 }
 		
 
+
+//======== GET_DIR ==========
+
 //returns a starting directory is given, if not given, current dir will be default
 char *get_dir(char * dir,char *path){
 	//char cwd[2] = ".";
@@ -239,6 +267,9 @@ char *get_dir(char * dir,char *path){
 }
 
 
+//======= HUMAN_READ =========
+
+// returns a human readable size followed by proper suffix
 char* human_read(double size/*in bytes*/, char *buf) {
 	unsigned int index = 0;
 	const char* suffix_units[] = {"B", "kB", "MB", "GB", "TB"};
@@ -250,6 +281,10 @@ char* human_read(double size/*in bytes*/, char *buf) {
     return buf;
 }
 
+
+//======== OPTION_CHECK ========
+
+// checks for compatable option
 bool option_check(char * options){
 	if((strstr(options, "B") != NULL) && (strstr(options, "m") != NULL)){
                 printf("ERROR: cannot have options 'B' and 'm' together\n");

@@ -17,7 +17,7 @@
 #include <grp.h>
 #include <pwd.h>
 #include <errno.h>
-
+#include <stdbool.h>
 
 #define MAX_ARGS 10
 #define MAX_SIZE 4096
@@ -27,7 +27,7 @@ int depthfirstapply(char *path, int pathfun(char *path, char *options, int scale
 int sizepathfun(char *path, char *options, int scale);
 char *get_dir(char *dir,char *path);
 char *human_read(double size, char *buf);
-
+bool option_check(char *options);
 //=========== MAIN ============
 
 int main(int argc, char **argv){
@@ -41,9 +41,6 @@ int main(int argc, char **argv){
 	unsigned int scale = 1048576; // default for scale
 	unsigned int depth;
 	
-	//int *fileCount;
-	//fileCount = malloc(sizeof(int));    //allocating memory to pointer fileCount
-	//*fileCount = 0;
 
 	while((options = getopt(argc, argv, "haB:bmcd:HLs")) != -1){
 		switch(options){
@@ -94,11 +91,17 @@ int main(int argc, char **argv){
 				return EXIT_FAILURE;
 		}
 	}
+
+	// checks for incompatible options
+	if(option_check(selected_options)){ return EXIT_FAILURE;}
 	
+	//get selected directory
 	selected_directory = get_dir(argv[optind], path);
+	
 	printf("Options selected: %s \n", selected_options);
 	printf("Directory to be scanned: %s \n\n", selected_directory);
 	
+	// this runs the recursive search through directories
 	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts, scale);
 	
 	if((strstr(selected_options, "c") != NULL)){
@@ -109,13 +112,12 @@ int main(int argc, char **argv){
                 	printf("Total: %d\n", total);
         	}
 	}
-	
+
 
 	printf("\nDirectories: %d\n", counts[1]);
 	printf("Regular files:%d\n\n", counts[0] );
 		
-	
-	//free(fileCount);			
+				
 	return(0);
 }
 	
@@ -231,5 +233,26 @@ char* human_read(double size/*in bytes*/, char *buf) {
     }
     sprintf(buf, "%.*f %s", index, size, suffix_units[index]);
     return buf;
+}
+
+bool option_check(char * options){
+	if((strstr(options, "B") != NULL) && (strstr(options, "m") != NULL)){
+                printf("ERROR: cannot have options 'B' and 'm' together\n");
+		printf("Usage: mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2> ...\n");
+		return true;
+                }
+        if((strstr(options, "B") != NULL) && (strstr(options, "b") != NULL)){
+                printf("ERROR: cannot have options 'B' and 'b' together\n");
+		printf("Usage: mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2> ...\n");
+		return true;
+                }
+        if((strstr(options, "b") != NULL) && (strstr(options, "m") != NULL)){
+                printf("ERROR: cannot have options 'b' and 'm' together\n");
+		printf("Usage: mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2> ...\n");
+		return true;
+                }
+	else
+		return false;
+
 }
 

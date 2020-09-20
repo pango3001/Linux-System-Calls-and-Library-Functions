@@ -40,7 +40,7 @@ int main(int argc, char **argv){
 	unsigned int total; // total size
 	char path[MAX_SIZE];
 	char buffer[MAX_SIZE];
-	unsigned int counts[2] = {0,1}; // counter for files and directories
+	unsigned int counts[3] = {0,1}; // counter for files and directories and symlinks
 	unsigned int scale = 1048576; // default for scale
 	unsigned int depth;
 	
@@ -124,9 +124,12 @@ int main(int argc, char **argv){
 	}
 
 	printf("\nDirectories: %d\n", counts[1]);
-	printf("Regular files:%d\n\n", counts[0] );
+	printf("Regular files:%d\n", counts[0]);
+	if(strstr(selected_options, "L") != NULL){
+		printf("Symbolic links: %d\n", counts[2]);
+	}
 		
-				
+	printf("\n");			
 	return(0);
 }
 	
@@ -172,6 +175,20 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 						printf("%-10d %s/%s\n", size, path, direntp->d_name);
                         		}
 				}
+			}
+			
+			// checks if entry is symbolic link
+			if ((S_ISLNK(statbuf.st_mode) && (strstr(options, "L") != NULL))) {
+			unsigned int size = sizepathfun(buf, options, scale);
+			counts[2] = counts[2] + 1; // add to count of symlinks
+                                if(!(strstr(options, "s") != NULL)){
+                                        if(strstr(options, "H") != NULL){
+                                                printf("%-10s %s/%s\n", human_read((double)size, altbuf), path, direntp->d_name);
+                                        }
+                                        else {
+                                                printf("%-10d %s/%s\n", size, path, direntp->d_name);
+                                        }
+                                }
 			}
 			
 			// checks if the entry is a directory

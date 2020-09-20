@@ -18,6 +18,8 @@ mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2> ...\
 -m Same as -B 1048576.\
 -s Display only a total for each argument.
 
+Special notes: perror used when checking file status
+
 Known issues:\
 none
 

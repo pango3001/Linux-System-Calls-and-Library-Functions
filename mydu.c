@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -23,12 +23,15 @@
 #define MAX_SIZE 4096
 
 //======== PROTOTYPES =========
-int depthfirstapply(char *path, int pathfun(char *path, char *options, int scale),char *options, int counts[],int scale);
+int depthfirstapply(char *path, int pathfun(char *path, char *options, int scale),char *options, int counts[],int scale,int depth);
 int sizepathfun(char *path, char *options, int scale);
 char *get_dir(char *dir,char *path);
 char *human_read(double size, char *buf);
 bool option_check(char *options);
 //=========== MAIN ============
+
+unsigned int global_depth = -1;
+
 
 int main(int argc, char **argv){
 	unsigned int options;
@@ -102,7 +105,7 @@ int main(int argc, char **argv){
 	printf("Directory to be scanned: %s \n\n", selected_directory);
 	
 	// this runs the recursive search through directories
-	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts, scale);
+	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts, scale, depth);
 	
 	if((strstr(selected_options, "c") != NULL)){
 		if (strstr(selected_options, "H") != NULL){
@@ -121,7 +124,7 @@ int main(int argc, char **argv){
 	return(0);
 }
 	
-int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale),char* options, int counts[], int scale) {
+int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale),char* options, int counts[], int scale, int depth) {
 	 
 	char buf[MAX_SIZE]; //buffer for path
 	char altbuf[MAX_SIZE]; //alternative buffer for converting to human readable
@@ -129,8 +132,8 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 	struct dirent *direntp; // direntory entry pointer
 	DIR *dir = opendir(path);
 	unsigned int sum = 0; //size sum
-			
-
+	global_depth++;		
+	
 	if (dir == NULL) {
 		perror("ERROR: Failed to open directory\n");
 		return -1;
@@ -162,12 +165,13 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 					printf("%-10d %s/%s\n", size, path, direntp->d_name);
                         	}
 			}
-
+			
 			// checks if the entry is a directory
 			if (S_ISDIR(statbuf.st_mode)) {
+				if(global_depth >= depth) {break;}
 				counts[1] = counts [1] + 1; //adds to count of directories
 				sum += sizepathfun(buf, options, scale);
-				sum += depthfirstapply(buf, sizepathfun, options, counts, scale);
+				sum += depthfirstapply(buf, sizepathfun, options, counts, scale, depth);
 			}
 			else
 				sum += sizepathfun(buf, options, scale);	
@@ -182,7 +186,7 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 		printf("%-10s %s\n", human_read((double) sum,altbuf), path);
 	}
 	else {printf("%-10d %s\n", sum, path);}
-
+	global_depth--;
 	return sum;	
 }
 

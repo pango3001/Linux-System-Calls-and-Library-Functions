@@ -98,24 +98,30 @@ int main(int argc, char **argv){
 	// checks for incompatible options
 	if(option_check(selected_options)){ return EXIT_FAILURE;}
 	
-	//get selected directory
-	selected_directory = get_dir(argv[optind], path);
+	//printf("Options selected: %s \n", selected_options);
 	
-	printf("Options selected: %s \n", selected_options);
-	printf("Directory to be scanned: %s \n\n", selected_directory);
-	
-	// this runs the recursive search through directories
-	total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts, scale, depth);
-	
-	if((strstr(selected_options, "c") != NULL)){
-		if (strstr(selected_options, "H") != NULL){
-                	printf("Total: %s\n", human_read((double) total, buffer));
-		}
-		else {
-                	printf("Total: %d\n", total);
-        	}
-	}
+	// loops through directories
+	while(argv[optind] != '\0'){
+		// get selected directory
+		selected_directory = get_dir(argv[optind], path);
 
+		// runs the search and print through the directory and files
+		total = depthfirstapply(selected_directory, sizepathfun, selected_options, counts, scale, depth);
+
+        	if((strstr(selected_options, "c") != NULL) || (strstr(selected_options, "s") != NULL)){
+                	if(strstr(selected_options, "s") != NULL){
+				printf("Directory: %s -> ", selected_directory);
+			}
+			if (strstr(selected_options, "H") != NULL){
+                        	printf("Total: %s\n", human_read((double) total, buffer));
+                	}
+                	else {
+                        	printf("Total: %d\n", total);
+                	}
+        	}
+		// increase index to next directory
+		optind++;
+	}
 
 	printf("\nDirectories: %d\n", counts[1]);
 	printf("Regular files:%d\n\n", counts[0] );
@@ -155,15 +161,17 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 	                }
                         // if regular file and a selection then print stats on files too
 			if ((S_ISREG(statbuf.st_mode) && (strstr(options, "a") != NULL))) {
-                                //prints files along with directories
-                                //sum += sizepathfun(buf, options);
+                                //prints files
                                 unsigned int size = sizepathfun(buf, options, scale);
-                                if(strstr(options, "H") != NULL){
-                			printf("%-10s %s/%s\n", human_read((double)size, altbuf), path, direntp->d_name);
-        			}
-        			else {
-					printf("%-10d %s/%s\n", size, path, direntp->d_name);
-                        	}
+                                if(!(strstr(options, "s") != NULL)){
+
+					if(strstr(options, "H") != NULL){
+	                			printf("%-10s %s/%s\n", human_read((double)size, altbuf), path, direntp->d_name);
+        				}
+        				else {
+						printf("%-10d %s/%s\n", size, path, direntp->d_name);
+                        		}
+				}
 			}
 			
 			// checks if the entry is a directory
@@ -181,12 +189,14 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 	}
 	
 	closedir(dir);
-
-	//prints the size and path
-	if(strstr(options, "H") != NULL){ // human readable
-		printf("%-10s %s\n", human_read((double) sum,altbuf), path);
+	
+	if(!(strstr(options, "s") != NULL)){
+		//prints the size and path of directory
+		if(strstr(options, "H") != NULL){ // human readable
+			printf("%-10s %s\n", human_read((double) sum,altbuf), path);
+		}
+		else {printf("%-10d %s\n", sum, path);}
 	}
-	else {printf("%-10d %s\n", sum, path);}
 	global_depth--;
 	return sum;	
 }

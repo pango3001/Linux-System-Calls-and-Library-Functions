@@ -32,7 +32,7 @@ bool option_check(char *options);
 
 //========= GLOBALS ===========
 
-unsigned int global_depth = -1;
+int global_depth = -1;
 
 //=========== MAIN ============
 int main(int argc, char **argv){
@@ -42,7 +42,7 @@ int main(int argc, char **argv){
 	unsigned int total; // total size
 	char path[MAX_SIZE];
 	char buffer[MAX_SIZE];
-	unsigned int counts[3] = {0,1}; // counter for files and directories and symlinks
+	unsigned int counts[3] = {0,0,0}; // counter for files and directories and symlinks
 	unsigned int scale = 1048576; // default for scale
 	unsigned int depth;
 	

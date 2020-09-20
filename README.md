@@ -6,6 +6,7 @@ the du utility uses the current working directory.
 
 #The solution will be invoked using the following command:
 mydu [-h]
+
 mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2> ...
 -a Write count for all files, not just directories.
 -B M Scale sizes by M before printing; for example, -BM prints size in units of 1,048,576 bytes.

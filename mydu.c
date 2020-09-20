@@ -168,7 +168,8 @@ int depthfirstapply(char *path, int pathfun(char *pathl,char *options, int scale
 			
 			// checks if the entry is a directory
 			if (S_ISDIR(statbuf.st_mode)) {
-				if(global_depth >= depth) {break;}
+				// checks for depth of directory
+				if((strstr(options, "d") != NULL) && (global_depth >= depth)) {break;}
 				counts[1] = counts [1] + 1; //adds to count of directories
 				sum += sizepathfun(buf, options, scale);
 				sum += depthfirstapply(buf, sizepathfun, options, counts, scale, depth);

@@ -23,6 +23,138 @@ Special notes: perror used when checking file status
 Known issues:\
 none
 
+
+# CMP SCI 4760 Operating Systems
+
+Assignment # 1 Due Date: September 14, 2020
+
+Important:Please do all assignments onhoare
+
+# Linux System Calls and Library Functions
+
+# Purpose
+
+The goal of this homework is to become familiar with the environment in hoare while practising system calls. You will also
+demonstrate your proficiency in the use ofperrorandgetoptin this submission.
+
+# Task
+
+Implement the task specified in Exercise 5.39 (p. 180) in your text by Robbins/Robbins. Do only questions 1–4 in the assign-
+ment, that is, you do not have to dobreadthfirstapply. Your executable will be calledmydu.
+
+This exercise deals with the implementation of the Unix application known asdu. The commanddudisplays the size of
+subdirectories of the tree rooted at the directories/files specified on the command-line arguments. If called with no argument,
+theduutility uses the current working directory. Experiment with theducommand onhoareand also read its man page.
+
+# Invoking the solution
+
+Your solution will be invoked using the following command:
+
+mydu [-h]
+mydu [-a] [-B M | -b | -m] [-c] [-d N] [-H] [-L] [-s] <dir1> <dir2> ...
+
+-aWrite count for all files, not just directories.
+
+-B MScale sizes byMbefore printing; for example,-BMprints size in units of 1,048,576 bytes.
+
+-bPrint size in bytes.
+
+-cPrint a grand total.
+
+-d NPrint the total for a directory only if it isNor fewer levels below the command line argument.
+
+-hPrint a help message or usage, and exit
+
+-HHuman readable; print size in human readable format, for example, 1K, 234M, 2G.
+
+-LDereference all symbolic links. By default, you will not dereference symbolic links.
+
+-mSame as-B 1048576.
+
+-sDisplay only a total for each argument.
+
+When you useperror, please print some meaningful error messages. The format for error messages should be:
+
+mydu: Error: Detailed error message
+
+
+Linux System Calls 2
+
+wheremyduis actually the name of the executable (argv[0]) and should be appropriately modified if the name of executable
+is changed without a need for recompilation.
+
+It is required for this project that you use version control, aMakefile, and aREADME. YourREADMEfile should consist, at
+a minimum, of a description of how I should compile and run your project, any outstanding problems that it still has, and any
+problems you encountered. YourMakefileshould use suffix-rules or pattern-rules and have an option to clean up object files.
+
+# Suggested implementation steps
+
+1. Set up your git account, if you have not already done so. You must periodically check your code into the git repository.
+2. Create your Makefile.
+3. Write code to parse options and receive the command parameters. Studygetopt(3), if you do not know how to do it.
+    The page also has an example to guide you.
+4. Follow steps 1 to 4 in the exercise in the book.
+5. Create theREADMEfile.
+
+# Criteria for success
+
+You are free to use your own data structures and algorithms to perform the depth-first search. Your code should give proper
+results if the directory is empty, or if the directory does not contain any more subdirectories. Your code should properly account
+for the file size, possibly by usingstat(2)family of functions.Do not usesystem(3)function for anything.
+
+# Grading
+
+```
+1.Overall submission: 25 pts. Program compiles and upon reading, seems to be able to solve the assigned problem.
+```
+```
+2.Command line parsing: 10 pts. Program is able to parse the command line appropriately, assigning defaults as needed;
+issues help if needed.
+```
+```
+3.Use of perror: 5 pts. Program outputs appropriate error messages, making use ofperror(3).
+```
+```
+4.Makefile: 5 pts. Must use suffix rules or pattern rules. You’ll receive only 2 points for Makefile without those rules.
+```
+```
+5.README: 5 pts. Must address any special things you did, or if you missed anything.
+```
+```
+6.Conformance to specifications: 40 pts. Program works correctly and meets all of the specifications. Each option will be
+worth 2 points.
+```
+```
+7.Code readability: 10 pts. The code must be readable, with appropriate comments. Author and date should be identified.
+```
+# Submission
+
+Create your programs in a directory calledusername.1 whereusernameis your user name on hoare. Once you are done with
+developing and debugging,remove the executables and object files, and issue the following commands:
+
+% cd
+% chmod 755 ̃
+% ̃sanjiv/bin/handin cs4760 1
+% chmod 700 ̃
+
+
+Linux System Calls 3
+
+Do not copy and paste those commands from thePDFof the assignment. Type in the commands.
+
+Do not forgetMakefile(with suffix or pattern rules), your versioning files, andREADMEfor the assignment. If you do not
+use version control, you will lose 10 points. I want to see the log of how the program files are modified. Therefore, you should
+use some logging mechanism and let me know about it in yourREADME. You must check in the files at least once a day while
+you are working on them. Omission of aMakefile(with suffix rules) will result in a loss of another 10 points, whileREADME
+will cost you 5 points. I do not like to see any extensions onMakefileandREADMEfiles.
+
+Before the final submission, perform amake cleanand keep the latest source checked out in your directory.
+
+You do not have to hand in a hard copy of the project. Assignment is due by 11:59pm on the due date.
+
+
+
+
 Git log:```bash
 commit a9d24e0e869e85b2aeb7e785cf4cda6c77601939
 Author: Jesse McCarville <pango3001@gmail.com>
